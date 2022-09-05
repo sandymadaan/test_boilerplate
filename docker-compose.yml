@@ -1,0 +1,55 @@
+version : "3"
+services:
+  vite-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vite-api
+    depends_on:
+      - vite-pg
+    volumes:
+      - .:/var/www/html
+    restart: always
+    ports:
+      - "1633:80"
+      - '${APP_PORT:-81}:81'
+      - "3001:3001"
+    environment:
+      APP_NAME: 'F+L Laravel Boilerplate'
+      APP_DEBUG: 'true'
+      APP_URL: 'http://168.223.1.1'
+      DB_CONNECTION: 'pgsql'
+      QUEUE_CONNECTION: 'database'
+      XDEBUG_START_WITH_REQUEST: 'no'
+    networks:
+      vite-api-network:
+        ipv4_address: 168.223.1.1
+    extra_hosts:
+      - host.docker.internal:host-gateway
+
+  vite-pg:
+    image: postgres:latest
+    ports:
+        - "2346:5432"
+    environment:
+      POSTGRES_PASSWORD: docker
+      POSTGRES_DB: test_db
+    container_name: vite-pg
+    volumes:
+      - vite-pg-disk:/var/lib/postgres
+      - ./db-dev:/var/lib/postgres/db-dev
+    networks:
+      vite-api-network:
+        ipv4_address: 168.223.1.2
+
+# On-disk storage of DB data, when containers are stopped/removed
+volumes:
+  vite-pg-disk: {}
+
+# Local network for services running using this docker-compose config
+networks:
+  vite-api-network:
+    ipam:
+      driver: default
+      config:
+        - subnet: 168.223.0.0/16
